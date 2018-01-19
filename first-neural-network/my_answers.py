@@ -1,6 +1,17 @@
 import numpy as np
 
 
+def sigmoid(x):
+    """
+    Calculate sigmoid
+    """
+    return 1 / (1 + np.exp(-x))
+
+
+def identity(x):
+    return x
+
+
 class NeuralNetwork(object):
 
     def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate):
@@ -27,7 +38,8 @@ class NeuralNetwork(object):
         # Note: in Python, you can define a function with a lambda expression,
         # as shown below.
         # Replace 0 with your sigmoid calculation.
-        self.activation_function = lambda x: 0
+        self.activation_function = sigmoid
+        self.output_activation_function = identity
 
         # If the lambda code above is not something you're familiar with,
         # You can uncomment out the following three lines and put your
@@ -142,16 +154,17 @@ class NeuralNetwork(object):
             features: 1D array of feature values
         '''
 
-        # ### Implement the forward pass here ####
-        # TODO: Hidden layer - replace these values with the appropriate
-        # calculations.
-        hidden_inputs = None  # signals into hidden layer
-        hidden_outputs = None  # signals from hidden layer
+        # Hidden layer
+        # signals into hidden layer
+        hidden_inputs = np.matmul(features, self.weights_input_to_hidden)
+        # signals from hidden layer
+        hidden_outputs = self.activation_function(hidden_inputs)
 
-        # TODO: Output layer - Replace these values with the appropriate
-        # calculations.
-        final_inputs = None  # signals into final output layer
-        final_outputs = None  # signals from final output layer
+        # Output layer
+        # signals into final output layer
+        final_inputs = np.matmul(hidden_outputs, self.weights_hidden_to_output)
+        # signals from final output layer
+        final_outputs = self.output_activation_function(final_inputs)
 
         return final_outputs
 
@@ -163,3 +176,27 @@ iterations = 100
 learning_rate = 0.1
 hidden_nodes = 2
 output_nodes = 1
+
+#########################################################
+# TESTING
+#########################################################
+
+inputs = np.array([[0.5, -0.2, 0.1]])
+targets = np.array([[0.4]])
+test_w_i_h = np.array([[0.1, -0.2],
+                       [0.4, 0.5],
+                       [-0.3, 0.2]])
+test_w_h_o = np.array([[0.3],
+                       [-0.1]])
+
+
+def main():
+    network = NeuralNetwork(3, 2, 1, 0.5)
+    network.weights_input_to_hidden = test_w_i_h.copy()
+    network.weights_hidden_to_output = test_w_h_o.copy()
+
+    assert np.allclose(network.run(inputs), 0.09998924)
+
+
+if __name__ == '__main__':
+    main()
