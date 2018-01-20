@@ -5,17 +5,17 @@ from my_answers import NeuralNetwork
 import sys
 from my_answers import iterations, learning_rate, hidden_nodes, output_nodes
 import itertools
-import json
+import pickle
 import io
 import os.path
+from multiprocessing import Pool
 
 
 def MSE(y, Y):
     return np.mean((y - Y) ** 2)
 
 
-def main():
-    np.random.seed(42)
+def load_data():
     data_path = 'Bike-Sharing-Dataset/hour.csv'
     rides = pd.read_csv(data_path)
 
@@ -55,62 +55,93 @@ def main():
 
     N_i = train_features.shape[1]
 
-    def train(hidden_nodes, learning_rate, iterations):
-        network = NeuralNetwork(N_i, hidden_nodes, output_nodes, learning_rate)
+    return (
+        N_i,
+        train_features, train_targets,
+        test_features, test_targets,
+        val_features, val_targets
+    )
 
-        losses = {'train': [], 'validation': []}
-        for ii in range(iterations):
-            # Go through a random batch of 128 records from the training data set
-            batch = np.random.choice(train_features.index, size=128)
-            X, y = train_features.ix[batch].values, train_targets.ix[batch]['cnt']
 
-            network.train(X, y)
+def train(hidden_nodes, learning_rate, iterations):
+    sys.stdout.write(f'Training: {hidden_nodes} {learning_rate} {iterations}\n')
+    fname = f'result.{hidden_nodes}_{learning_rate}_{iterations}.pickle'
+    if os.path.exists(fname):
+        with io.open(fname, 'rb') as f:
+            return pickle.load(f)
 
-            # Printing out the training progress
-            train_loss = MSE(network.run(train_features).T,
-                             train_targets['cnt'].values)
-            val_loss = MSE(network.run(val_features).T, val_targets['cnt'].values)
-            sys.stdout.write("\rProgress: {:2.1f}".format(100 * ii/float(iterations))
-                             + "% ... Training loss: " + str(train_loss)[:5]
-                             + " ... Validation loss: " + str(val_loss)[:5])
-            sys.stdout.flush()
+    (
+        N_i,
+        train_features, train_targets,
+        test_features, test_targets,
+        val_features, val_targets
+    ) = load_data()
 
-            losses['train'].append(train_loss)
-            losses['validation'].append(val_loss)
+    network = NeuralNetwork(N_i, hidden_nodes, output_nodes, learning_rate)
 
-        sys.stdout.write(f'\nDONE training. Training loss: {str(train_loss)[:5]}, validation loss: {str(val_loss)[:5]}\n')
-        sys.stdout.flush()
-        return train_loss, val_loss, network, losses
+    losses = {'train': [], 'validation': []}
+    for ii in range(iterations):
+        # Go through a random batch of 128 records from the training data set
+        batch = np.random.choice(train_features.index, size=128)
+        X, y = train_features.ix[batch].values, train_targets.ix[batch]['cnt']
 
-    hidden_nodes_opts = [8, 9, 10, 11, 12]
-    learning_rate_opts = [0.01]
-    iterations_opts = [3000, 3500, 4000, 5000]
+        network.train(X, y)
 
-    best_params = (None, None, None)
-    best_score = 1000
+        # Printing out the training progress
+        train_loss = MSE(network.run(train_features).T,
+                         train_targets['cnt'].values)
+        val_loss = MSE(network.run(val_features).T, val_targets['cnt'].values)
+        # sys.stdout.write("\rProgress: {:2.1f}".format(100 * ii/float(iterations))
+        #                  + "% ... Training loss: " + str(train_loss)[:5]
+        #                  + " ... Validation loss: " + str(val_loss)[:5])
+        # sys.stdout.flush()
 
-    optimize = False
-    if optimize:
-        for params in itertools.product(
-            hidden_nodes_opts, learning_rate_opts, iterations_opts
-        ):
-            x = '_'.join(map(str, params))
-            fname = f'result.{x}.json'
-            if os.path.exists(fname):
-                print('PARAMS', params, 'ALREADY CHECKED')
-                continue
-            print('TRAINING', params)
-            train_loss, val_loss, _, losses = train(*params)
-            print('PARAMS', params, 'SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
-            with io.open(fname, 'w', encoding='utf-8') as f:
-                json.dump(losses, f)
-            if val_loss < best_score:
-                best_params = params
-                best_score = val_loss
-        print('BEST PARAMS', best_params)
-    else:
-        best_params = (8, 0.01, 4000)
+        losses['train'].append(train_loss)
+        losses['validation'].append(val_loss)
 
+    sys.stdout.write(f'DONE training: {hidden_nodes} {learning_rate} {iterations} Training loss: {str(train_loss)[:5]}, validation loss: {str(val_loss)[:5]}\n')
+    sys.stdout.flush()
+
+    fname = f'result.{hidden_nodes}_{learning_rate}_{iterations}.pickle'
+
+    result = {
+        'train_loss': train_loss,
+        'val_loss': val_loss,
+        'network': network,
+        'losses': losses,
+        'hidden_nodes': hidden_nodes,
+        'learning_rate': learning_rate,
+        'iterations': iterations
+    }
+    with io.open(fname, 'wb') as f:
+        pickle.dump(result, f)
+    return result
+
+
+def main():
+    hidden_nodes_opts = [10, 15, 20]
+    learning_rate_opts = [0.01, 0.05, 0.1]
+    iterations_opts = [3000, 5000, 7000, 10000]
+    opts = itertools.product(
+        hidden_nodes_opts, learning_rate_opts, iterations_opts
+    )
+
+    with Pool(5) as pool:
+        results = pool.starmap(train, opts)
+
+    ordered = sorted(
+        results, key=lambda result: result['val_loss'], reverse=True
+    )
+    for i, result in enumerate(ordered, 1):
+        print(
+            i,
+            result['hidden_nodes'], result['learning_rate'],
+            result['iterations'],
+            'TRAIN', result['train_loss'], 'VAL', result['val_loss']
+        )
+
+
+def x():
     train_loss, val_loss, network, losses = train(*best_params)
     print('SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
 
