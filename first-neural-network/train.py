@@ -7,6 +7,7 @@ from my_answers import iterations, learning_rate, hidden_nodes, output_nodes
 import itertools
 import json
 import io
+import os.path
 
 
 def MSE(y, Y):
@@ -81,29 +82,33 @@ def main():
         sys.stdout.flush()
         return train_loss, val_loss, network, losses
 
-    hidden_nodes_opts = [3, 5, 7, 9, 11, 13]
-    learning_rate_opts = [0.0001, 0.001, 0.01, 0.1]
-    iterations_opts = [500, 1000, 2000]
+    hidden_nodes_opts = [8, 9, 10, 11, 12]
+    learning_rate_opts = [0.005, 0.01]
+    iterations_opts = [1000, 1500, 2000, 2500, 3000]
 
     best_params = (None, None, None)
     best_score = 1000
 
-    optimize = False
+    optimize = True
     if optimize:
         for params in itertools.product(
             hidden_nodes_opts, learning_rate_opts, iterations_opts
         ):
+            x = '_'.join(map(str, params))
+            fname = f'result.{x}.json'
+            if os.path.exists(fname):
+                print('PARAMS', params, 'ALREADY CHECKED')
+                continue
             train_loss, val_loss, _, losses = train(*params)
             print('PARAMS', params, 'SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
-            x = '_'.join(map(str, params))
-            with io.open(f'result.{x}.json', 'w', encoding='utf-8') as f:
+            with io.open(fname, 'w', encoding='utf-8') as f:
                 json.dump(losses, f)
             if val_loss < best_score:
                 best_params = params
                 best_score = val_loss
         print('BEST PARAMS', best_params)
     else:
-        best_params = (7, 0.01, 5000)
+        best_params = (7, 0.01, 100000)
 
     train_loss, val_loss, network, losses = train(*best_params)
     print('SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
@@ -111,8 +116,10 @@ def main():
     fig, ax = plt.subplots()
     plt.plot(losses['train'], label='Training loss')
     plt.plot(losses['validation'], label='Validation loss')
+    min_validation = min(losses['validation'])
     plt.legend()
     ax.set_yscale("log")
+    ax.axhline(min_validation, linestyle='--', color='k')
     plt.ylim()
 
     plt.show()
