@@ -1,5 +1,5 @@
 import io
-import json
+import pickle
 import os
 
 
@@ -9,22 +9,26 @@ def parse_params(filename):
 
 
 def parse_data(filename):
-    with io.open(filename, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    return data['train'][-1], data['validation'][-1]
+    with io.open(filename, 'rb') as f:
+        return pickle.load(f)
 
 
 def main():
     filenames = (
         filename for filename in os.listdir('.')
-        if filename.startswith('result.') and filename.endswith('.json')
+        if filename.startswith('result.') and filename.endswith('.pickle')
     )
-    data = {
-        parse_params(filename): parse_data(filename) for filename in filenames
-    }
-    ordered = sorted(data, key=lambda params: data[params][1], reverse=True)
-    for i, params in enumerate(ordered):
-        print(i + 1, '\tPARAM', params, 'RESULT', data[params])
+    data = (
+        parse_data(filename) for filename in filenames
+    )
+    ordered = sorted(data, key=lambda result: result['val_loss'], reverse=True)
+    for i, result in enumerate(ordered, 1):
+        print(
+            i, result['hidden_nodes'], result['learning_rate'],
+            result['iterations'],
+            'TRAIN', result['train_loss'],
+            'VAL', result['val_loss']
+        )
 
 
 if __name__ == '__main__':
