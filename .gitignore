@@ -4,6 +4,7 @@
 embeddings/data/
 embeddings/text8.zip
 face_generation/data/
+first-neural-network/result.*.json
 
 .ipynb_checkpoints/
 
