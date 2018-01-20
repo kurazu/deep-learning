@@ -23,9 +23,8 @@ def main():
         parse_params(filename): parse_data(filename) for filename in filenames
     }
     ordered = sorted(data, key=lambda params: data[params][1], reverse=True)
-    best_params = ordered[-1]
-    print('BEST PARAMS', best_params, 'RESULT', data[best_params])
-    import pdb; pdb.set_trace()
+    for i, params in enumerate(ordered):
+        print(i + 1, '\tPARAM', params, 'RESULT', data[params])
 
 
 if __name__ == '__main__':

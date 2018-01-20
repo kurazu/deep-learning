@@ -109,15 +109,14 @@ class NeuralNetwork(object):
         # actual output.
         error = np.sum(y - final_outputs)
 
-        # TODO: Calculate the hidden layer's contribution to the error
-        hidden_error = None
-
         # TODO: Backpropagated error terms - Replace these values with your
         # calculations.
         output_error_term = error * 1
 
         # Transform from column matrix to row vector
-        weights_hidden_to_output = self.weights_hidden_to_output.reshape(self.weights_hidden_to_output.shape[0])
+        weights_hidden_to_output = self.weights_hidden_to_output.reshape(
+            self.weights_hidden_to_output.shape[0]
+        )
 
         hidden_error_term = (
             weights_hidden_to_output *
@@ -126,10 +125,12 @@ class NeuralNetwork(object):
         )
 
         # Weight step (hidden to output)
-        delta_weights_h_o += self.lr * (output_error_term * hidden_outputs).reshape(hidden_outputs.shape[0], 1)
+        delta_weights_h_o += self.lr * (output_error_term * hidden_outputs)\
+            .reshape(hidden_outputs.shape[0], 1)
 
         # Weight step (input to hidden)
-        delta_weights_i_h += self.lr * hidden_error_term.reshape(1, hidden_error_term.shape[0]) * X.reshape(X.shape[0], 1)
+        delta_weights_i_h += self.lr * hidden_error_term\
+            .reshape(1, hidden_error_term.shape[0]) * X.reshape(X.shape[0], 1)
 
         return delta_weights_i_h, delta_weights_h_o
 
@@ -163,51 +164,7 @@ class NeuralNetwork(object):
 #########################################################
 # Set your hyperparameters here
 ##########################################################
-iterations = 2000
+iterations = 3000
 learning_rate = 0.01
-hidden_nodes = 10
+hidden_nodes = 8
 output_nodes = 1
-
-#########################################################
-# TESTING
-#########################################################
-
-inputs = np.array([[0.5, -0.2, 0.1]])
-targets = np.array([[0.4]])
-test_w_i_h = np.array([[0.1, -0.2],
-                       [0.4, 0.5],
-                       [-0.3, 0.2]])
-test_w_h_o = np.array([[0.3],
-                       [-0.1]])
-
-
-def main():
-    network = NeuralNetwork(3, 2, 1, 0.5)
-
-    # Test forward
-    network.weights_input_to_hidden = test_w_i_h.copy()
-    network.weights_hidden_to_output = test_w_h_o.copy()
-
-    assert np.allclose(network.run(inputs), 0.09998924)
-
-    # Test backpropagation
-
-    network.weights_input_to_hidden = test_w_i_h.copy()
-    network.weights_hidden_to_output = test_w_h_o.copy()
-
-    network.train(inputs, targets)
-    assert np.allclose(
-        network.weights_hidden_to_output,
-        np.array([[0.37275328],
-                  [-0.03172939]])
-    )
-    assert np.allclose(
-        network.weights_input_to_hidden,
-        np.array([[0.10562014, -0.20185996],
-                  [0.39775194, 0.50074398],
-                  [-0.29887597, 0.19962801]])
-    )
-
-
-if __name__ == '__main__':
-    main()

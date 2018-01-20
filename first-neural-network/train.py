@@ -83,13 +83,13 @@ def main():
         return train_loss, val_loss, network, losses
 
     hidden_nodes_opts = [8, 9, 10, 11, 12]
-    learning_rate_opts = [0.005, 0.01]
-    iterations_opts = [1000, 1500, 2000, 2500, 3000]
+    learning_rate_opts = [0.01]
+    iterations_opts = [3000, 3500, 4000, 5000]
 
     best_params = (None, None, None)
     best_score = 1000
 
-    optimize = True
+    optimize = False
     if optimize:
         for params in itertools.product(
             hidden_nodes_opts, learning_rate_opts, iterations_opts
@@ -99,6 +99,7 @@ def main():
             if os.path.exists(fname):
                 print('PARAMS', params, 'ALREADY CHECKED')
                 continue
+            print('TRAINING', params)
             train_loss, val_loss, _, losses = train(*params)
             print('PARAMS', params, 'SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
             with io.open(fname, 'w', encoding='utf-8') as f:
@@ -108,7 +109,7 @@ def main():
                 best_score = val_loss
         print('BEST PARAMS', best_params)
     else:
-        best_params = (7, 0.01, 100000)
+        best_params = (8, 0.01, 4000)
 
     train_loss, val_loss, network, losses = train(*best_params)
     print('SCORE TRAIN', train_loss, 'VALIDATION', val_loss)
