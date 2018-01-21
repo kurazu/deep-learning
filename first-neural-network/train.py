@@ -59,7 +59,8 @@ def load_data():
         N_i,
         train_features, train_targets,
         test_features, test_targets,
-        val_features, val_targets
+        val_features, val_targets,
+        scaled_features, rides, test_data
     )
 
 
@@ -74,7 +75,8 @@ def train(hidden_nodes, learning_rate, iterations):
         N_i,
         train_features, train_targets,
         test_features, test_targets,
-        val_features, val_targets
+        val_features, val_targets,
+        _scaled_features, _rides, _test_data
     ) = load_data()
 
     network = NeuralNetwork(N_i, hidden_nodes, output_nodes, learning_rate)
@@ -119,9 +121,9 @@ def train(hidden_nodes, learning_rate, iterations):
 
 
 def main():
-    hidden_nodes_opts = [10, 15, 20]
-    learning_rate_opts = [0.01, 0.05, 0.1]
-    iterations_opts = [3000, 5000, 7000, 10000]
+    hidden_nodes_opts = [20, 30, 40]
+    learning_rate_opts = [0.1, 0.5, 1, 5, 10]
+    iterations_opts = [5000, 10000, 20000, 30000]
     opts = itertools.product(
         hidden_nodes_opts, learning_rate_opts, iterations_opts
     )
