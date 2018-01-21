@@ -64,10 +64,10 @@ def load_data():
     )
 
 
-def train(hidden_nodes, learning_rate, iterations):
+def train(hidden_nodes, learning_rate, iterations, force=False):
     sys.stdout.write(f'Training: {hidden_nodes} {learning_rate} {iterations}\n')
     fname = f'result.{hidden_nodes}_{learning_rate}_{iterations}.pickle'
-    if os.path.exists(fname):
+    if not force and os.path.exists(fname):
         with io.open(fname, 'rb') as f:
             return pickle.load(f)
 

@@ -13,7 +13,7 @@ def main():
         val_features, val_targets,
         scaled_features, rides, test_data
     ) = load_data()
-    result = train(hidden_nodes, learning_rate, iterations)
+    result = train(hidden_nodes, learning_rate, iterations, force=True)
     losses = result['losses']
     network = result['network']
 
