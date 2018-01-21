@@ -6,6 +6,8 @@ embeddings/text8.zip
 face_generation/data/
 first-neural-network/result.*.json
 first-neural-network/result.*.pickle
+first-neural-network/first_neural_network-result*.json
+first-neural-network/first_neural_network*.zip
 
 .ipynb_checkpoints/
 
