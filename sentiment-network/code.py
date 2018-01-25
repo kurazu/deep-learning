@@ -106,7 +106,7 @@ class SentimentNetwork:
             word for word in review.split(' ') if word in self.review_vocab_set
         )
         for word in known_words:
-            self.layer_0[0][self.word2index[word]] += 1
+            self.layer_0[0][self.word2index[word]] = 1
 
     def get_target_for_label(self, label):
         # TODO: Copy the code you wrote for get_target_for_label
