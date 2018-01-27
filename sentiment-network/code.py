@@ -200,8 +200,8 @@ class SentimentNetwork:
 
             hidden_error_term = (
                 self.weights_1_2 *
-                output_error_term *
-                self.identity_output_2_derivative(hidden_outputs)
+                output_error_term # *
+                # self.identity_output_2_derivative(hidden_outputs)
             )
 
             delta_weights_h_o = (output_error_term * hidden_outputs)
@@ -213,8 +213,9 @@ class SentimentNetwork:
             # delta_weights_i_h = hidden_error_term * layer_0
             # self.weights_0_1 += self.learning_rate * delta_weights_i_h.T
 
+            scaled_hidden_error_term = self.learning_rate * hidden_error_term.T[0]
             for idx in preprocessed_review:
-                self.weights_0_1[idx] += self.learning_rate * hidden_error_term.T[0]
+                self.weights_0_1[idx] += scaled_hidden_error_term
 
             correct_so_far += int(np.sum(np.abs(error)) < 0.5)
             # TODO: Keep track of correct predictions. To determine if the prediction was
