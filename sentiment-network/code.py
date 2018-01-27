@@ -2,10 +2,11 @@ import time
 import sys
 import numpy as np
 import io
+from collections import Counter
 
 # Encapsulate our neural network in a class
 class SentimentNetwork:
-    def __init__(self, reviews, labels, hidden_nodes = 10, learning_rate = 0.1):
+    def __init__(self, reviews, labels, hidden_nodes = 10, learning_rate = 0.1, min_count=20, polarity_cutoff=0.05):
         """Create a SentimenNetwork with the given settings
         Args:
             reviews(list) - List of reviews used for training
@@ -20,23 +21,41 @@ class SentimentNetwork:
 
         # process the reviews and their associated labels so that everything
         # is ready for training
-        self.pre_process_data(reviews, labels)
+        self.pre_process_data(reviews, labels, min_count, polarity_cutoff)
 
         # Build the network to have the number of hidden nodes and the learning rate that
         # were passed into this initializer. Make the same number of input nodes as
         # there are vocabulary words and create a single output node.
         self.init_network(len(self.review_vocab), hidden_nodes, 1, learning_rate)
 
-    def pre_process_data(self, reviews, labels):
+    def pre_process_data(self, reviews, labels, min_count, polarity_cutoff):
+        positive_counts = Counter()
+        negative_counts = Counter()
+        total_counts = Counter()
 
-        review_vocab = set()
         # TODO: populate review_vocab with all of the words in the given reviews
         #       Remember to split reviews into individual words
         #       using "split(' ')" instead of "split()".
-        for review in reviews:
+        for review, label in zip(reviews, labels):
+            label_counts = positive_counts if label == 'POSITIVE' else negative_counts
             for word in review.split(' '):
-                review_vocab.add(word)
+                label_counts[word] += 1
+                total_counts[word] += 1
 
+        pos_neg_ratios = Counter()
+        for word in total_counts:
+            pos_neg_ratios[word] = positive_counts[word] / negative_counts.get(word, 1)
+
+        for word, ratio in pos_neg_ratios.most_common():
+            pos_neg_ratios[word] = np.log(ratio) if ratio > 1 else -np.log(1 / (ratio + 0.01))
+
+        review_vocab = set()
+        for word in total_counts:
+            if total_counts[word] < min_count:
+                continue
+            if abs(pos_neg_ratios[word]) < polarity_cutoff:
+                continue
+            review_vocab.add(word)
 
         # Convert the vocabulary set to a list so we can access words via indices
         self.review_vocab = list(review_vocab)
@@ -72,6 +91,7 @@ class SentimentNetwork:
 
     def init_network(self, input_nodes, hidden_nodes, output_nodes, learning_rate):
         # Store the number of nodes in input, hidden, and output layers.
+        print('Input', input_nodes, 'hidden', hidden_nodes, 'output', output_nodes)
         self.input_nodes = input_nodes
         self.hidden_nodes = hidden_nodes
         self.output_nodes = output_nodes
