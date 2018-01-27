@@ -91,22 +91,29 @@ class SentimentNetwork:
 
         # TODO: Create the input layer, a two-dimensional matrix with shape
         #       1 x input_nodes, with all values initialized to zero
-        self.layer_0 = np.zeros((1, input_nodes))
+        #  self.layer_0 = np.zeros((1, input_nodes))
+        self.layer_1 = np.zeros((1, hidden_nodes))
 
-    def update_input_layer(self, review):
-        # TODO: You can copy most of the code you wrote for update_input_layer
-        #       earlier in this notebook.
-        #
-        #       However, MAKE SURE YOU CHANGE ALL VARIABLES TO REFERENCE
-        #       THE VERSIONS STORED IN THIS OBJECT, NOT THE GLOBAL OBJECTS.
-        #       For example, replace "layer_0 *= 0" with "self.layer_0 *= 0"
-        self.layer_0 *= 0
+    # def update_input_layer(self, review):
+    #     # TODO: You can copy most of the code you wrote for update_input_layer
+    #     #       earlier in this notebook.
+    #     #
+    #     #       However, MAKE SURE YOU CHANGE ALL VARIABLES TO REFERENCE
+    #     #       THE VERSIONS STORED IN THIS OBJECT, NOT THE GLOBAL OBJECTS.
+    #     #       For example, replace "layer_0 *= 0" with "self.layer_0 *= 0"
+    #     self.layer_0 *= 0
 
+    #     known_words = (
+    #         word for word in review.split(' ') if word in self.review_vocab_set
+    #     )
+    #     for word in known_words:
+    #         self.layer_0[0][self.word2index[word]] = 1
+
+    def preprocess_review(self, review):
         known_words = (
             word for word in review.split(' ') if word in self.review_vocab_set
         )
-        for word in known_words:
-            self.layer_0[0][self.word2index[word]] = 1
+        return {self.word2index[word] for word in known_words}
 
     def get_target_for_label(self, label):
         # TODO: Copy the code you wrote for get_target_for_label
@@ -129,11 +136,14 @@ class SentimentNetwork:
     def identity_output_2_derivative(self, output):
         return 1
 
-    def forward_pass(self, review):
-        self.update_input_layer(review)
+    def forward_pass(self, preprocessed_review):
+        self.layer_1 *= 0
+
+        for idx in preprocessed_review:
+            self.layer_1 += self.weights_0_1[idx]
 
         # Hidden layer
-        hidden_inputs = np.matmul(self.layer_0, self.weights_0_1)
+        hidden_inputs = self.layer_1
         hidden_outputs = self.identity(hidden_inputs)
 
         # Output layer
@@ -161,6 +171,7 @@ class SentimentNetwork:
             # TODO: Get the next review and its correct label
             review = training_reviews[i]
             label = training_labels[i]
+            preprocessed_review = self.preprocess_review(review)
 
             # TODO: Implement the forward pass through the network.
             #       That means use the given review to update the input layer,
@@ -169,7 +180,9 @@ class SentimentNetwork:
             #
             #       Do not use an activation function for the hidden layer,
             #       but use the sigmoid activation function for the output layer.
-            hidden_outputs, final_outputs = self.forward_pass(review)
+            hidden_outputs, final_outputs = self.forward_pass(
+                preprocessed_review
+            )
             expected_value = int(label == 'POSITIVE')
             expected_output = np.array([[expected_value]])
 
@@ -192,10 +205,16 @@ class SentimentNetwork:
             )
 
             delta_weights_h_o = (output_error_term * hidden_outputs)
-            delta_weights_i_h = hidden_error_term * self.layer_0
-
             self.weights_1_2 += self.learning_rate * delta_weights_h_o.T
-            self.weights_0_1 += self.learning_rate * delta_weights_i_h.T
+
+            # layer_0 = np.zeros((1, self.input_nodes))
+            # for idx in preprocessed_review:
+            #     layer_0[0][idx] = 1.0
+            # delta_weights_i_h = hidden_error_term * layer_0
+            # self.weights_0_1 += self.learning_rate * delta_weights_i_h.T
+
+            for idx in preprocessed_review:
+                self.weights_0_1[idx] += self.learning_rate * hidden_error_term.T[0]
 
             correct_so_far += int(np.sum(np.abs(error)) < 0.5)
             # TODO: Keep track of correct predictions. To determine if the prediction was
@@ -259,7 +278,8 @@ class SentimentNetwork:
         #       Note: The review passed into this function for prediction
         #             might come from anywhere, so you should convert it
         #             to lower case prior to using it.
-        hidden_outputs, final_outputs = self.forward_pass(review.lower())
+        preprocessed_review = self.preprocess_review(review.lower())
+        hidden_outputs, final_outputs = self.forward_pass(preprocessed_review)
 
         # TODO: The output layer should now contain a prediction.
         #       Return `POSITIVE` for predictions greater-than-or-equal-to `0.5`,
